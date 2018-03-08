@@ -7,20 +7,21 @@ clear;close all;clc;
 syms m1 m2 l_1 l_2 q_1 q_2 q_1d q_2d; %Pendubot's mass of the links, length of the links and the joint angles
 syms tau_1 tau_2; %Torque
 syms g; 
+syms q_1d q_1dd q_2d q_2dd;
 
 % Step 2. Now computing the position and velocities of the masses in the
 % system:
 
-p_x1 = l_1*cos(q_1);  
+p_q_1 = l_1*cos(q_1);  
 p_y1 = l_1*sin(q_1);
 
-p_x2 = p_x1+l_2*cos(q_1+q_2);
+p_q_2 = p_q_1+l_2*cos(q_1+q_2);
 p_y2 = p_y1+l_2*sin(q_1+q_2);
 
-p = [p_x1 p_y1;
-    p_x2 p_y2];
+p = [p_q_1 p_y1;
+    p_q_2 p_y2];
 q = [q_1d;q_2d];
-j =jacobian([p_x1,p_y1,p_x2,p_y2],[q_1,q_2]);
+j =jacobian([p_q_1,p_y1,p_q_2,p_y2],[q_1,q_2]);
 v = j*q;
 
 
@@ -35,5 +36,26 @@ KE = KE_1 + KE_2;
 PE = m1*g*p_y1 +m2*g*p_y2;
 KE = simplify(KE);
 PE = simplify(PE);
-L = KE-PE
+L = KE-PE; 
 
+%Deriving the equaations of motion from Lagrangian: 
+
+pKEpq_1d = diff(KE,q_1d);
+ddtpKEpq_1d = diff(pKEpq_1d,q_1)*q_1d+ ...
+             diff(pKEpq_1d,q_1d)*q_1dd+ ...
+             diff(pKEpq_1d,q_2)*q_2d + ...
+             diff(pKEpq_1d,q_2d)*q_2dd;
+pKEpq_1 = diff(KE,q_1);
+pPEpq_1 = diff(PE,q_1);
+
+
+pKEpq_2d = diff(KE,q_2d);
+ddtpKEpq_2d = diff(pKEpq_2d,q_1)*q_1d+ ...
+             diff(pKEpq_2d,q_1d)*q_1dd+ ...
+             diff(pKEpq_2d,q_2)*q_2d + ...
+             diff(pKEpq_2d,q_2d)*q_2dd;
+pKEpq_2 = diff(KE,q_2);
+pPEpq_2 = diff(PE,q_2);   
+
+eqq_1 = simplify( ddtpKEpq_1d - pKEpq_1 + pPEpq_1 - tau_1)
+eqq_2 = simplify( ddtpKEpq_2d - pKEpq_2 + pPEpq_2 - tau_2)
