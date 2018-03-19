@@ -19,6 +19,7 @@
 
 % This file contains the dynamic model of the pendubot. So based on this
 % file a swing up control using feedback linearization will be developed
+%This otherwise also called as computed torque technique.
 
 % Step 1. Symbolic representation of position and velocity for lagrangian mechanics
 
@@ -41,16 +42,18 @@ p_y2 = p_y1+l_2*sin(q_1+q_2);
 p = [p_q_1 p_y1;
     p_q_2 p_y2];
 q = [q_1d;q_2d];
-j =jacobian([p_q_1,p_y1,p_q_2,p_y2],[q_1,q_2]);
-v = j*q;
-
-
+%j =jacobian([p_q_1,p_y1,p_q_2,p_y2],[q_1,q_2]);
+%v = j*q;
+v1x = -l_1*q_1d*sin(q_1)
+v1y = l_1*q_1d*cos(q_1)
+v2x = v1x-l_2*sin(q_1+q_2)*(q_1d+q_2d);
+v2y = v1y+l_2*cos(q_1+q_2)*(q_1d+q_2d);
 %P and V are the velocities that have been obtained
 
 %Step 3, Now calculating the Kinetic energy and the potential energy based
 %on the lagrangian mechanics
-KE_1 = 0.5*m1*(v(1,1)+v(2,1))^2;
-KE_2 = 0.5*m2*(v(3,1)+v(4,1))^2;
+KE_1 = 0.5*m1*(v1x+v1y)^2;
+KE_2 = 0.5*m2*(v2x+v2y)^2;
 
 KE = KE_1 + KE_2;
 PE = m1*g*p_y1 +m2*g*p_y2;
@@ -58,7 +61,6 @@ KE = simplify(KE);
 PE = simplify(PE);
 L = KE-PE; 
 matlabFunction(L, 'file', 'Lagrange');
-%Deriving the equaations of motion from Lagrangian: 
 
 pKEpq_1d = diff(KE,q_1d);
 ddtpKEpq_1d = diff(pKEpq_1d,q_1)*q_1d+ ...
@@ -75,15 +77,22 @@ ddtpKEpq_2d = diff(pKEpq_2d,q_1)*q_1d+ ...
              diff(pKEpq_2d,q_2)*q_2d + ...
              diff(pKEpq_2d,q_2d)*q_2dd;
 pKEpq_2 = diff(KE,q_2);
-pPEpq_2 = diff(PE,q_2);   
+pPEpq_2 = diff(PE,q_2); 
 
-syms kd kp 
-v_1 = kd*-q_1d + kp*(q_1d - q_1);
+%In the below step, We establish a linear relationship between output and
+%U.
+syms kd kp %A PD control is being introduced in order for the tracking control 
+%which is based on the outer loop control, See schematic for better
+%understanding
+v_1 = q_1dd+kd*-q_1d + kp*(q_1d - q_1);
 tau_1 = simplify( ddtpKEpq_1d - pKEpq_1 + pPEpq_1);
+eqq_2 = simplify( ddtpKEpq_2d - pKEpq_2 + pPEpq_2)==0; 
+qSol = isolate(eqq_2,q_2dd);
+q_2dd1 = subs(eqq_2, lhs(qSol), rhs(qSol));
+q_2dd2 = -l_2*m2*(l_2*q_1d^2*cos(2*q_1 + 2*q_2) - g*cos(q_1 + q_2) - l_2*q_1dd + l_2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*q_1dd*cos(q_2) + l_1*q_1dd*sin(2*q_1 + q_2) - l_1*q_1d^2*sin(q_2) - (l_2*(l_2*q_1d^2*cos(2*q_1 + 2*q_2) - g*cos(q_1 + q_2) - l_2*q_1dd + l_2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*q_1dd*cos(q_2) + l_1*q_1dd*sin(2*q_1 + q_2) - l_1*q_1d^2*sin(q_2) + l_1*q_1d^2*cos(2*q_1 + q_2) + l_2*q_1dd*sin(2*q_1 + 2*q_2) + 2*l_2*q_1d*q_2d*cos(2*q_1 + 2*q_2)))/(l_2 - l_2*sin(2*q_1 + 2*q_2)) + l_1*q_1d^2*cos(2*q_1 + q_2) + l_2*q_1dd*sin(2*q_1 + 2*q_2) + (l_2*sin(2*q_1 + 2*q_2)*(l_2*q_1d^2*cos(2*q_1 + 2*q_2) - g*cos(q_1 + q_2) - l_2*q_1dd + l_2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*q_1dd*cos(q_2) + l_1*q_1dd*sin(2*q_1 + q_2) - l_1*q_1d^2*sin(q_2) + l_1*q_1d^2*cos(2*q_1 + q_2) + l_2*q_1dd*sin(2*q_1 + 2*q_2) + 2*l_2*q_1d*q_2d*cos(2*q_1 + 2*q_2)))/(l_2 - l_2*sin(2*q_1 + 2*q_2)) + 2*l_2*q_1d*q_2d*cos(2*q_1 + 2*q_2));
+tau_1 = subs(tau_1,q_2dd,q_2dd2);
 tau_1 = subs(tau_1,q_1dd,v_1)
 matlabFunction(tau_1, 'file', 'ControlTorque1');
-eqq_2 = simplify( ddtpKEpq_2d - pKEpq_2 + pPEpq_2) == 0 
-%tau_2 should be zero
+%Internal dynamics of the system and their stability
 
-q_2dd = isolate(eqq_2,q_2dd)
-q_2dd
+%tau_2 should be zero
