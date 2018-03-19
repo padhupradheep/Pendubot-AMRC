@@ -81,10 +81,12 @@ pPEpq_2 = diff(PE,q_2);
 
 %In the below step, We establish a linear relationship between output and
 %U.
-syms kd kp %A PD control is being introduced in order for the tracking control 
+syms kd kp q_1ddr q_1dr q_1r %A PD control is being introduced in order for the tracking control 
 %which is based on the outer loop control, See schematic for better
 %understanding
-v_1 = q_1dd+kd*-q_1d + kp*(q_1d - q_1);
+
+%In order to track, we setup a reference trajectory! 
+v_1 = q_1ddr+kd*(q_1dr-q_1d) + kp*(q_1r - q_1);
 tau_1 = simplify( ddtpKEpq_1d - pKEpq_1 + pPEpq_1);
 eqq_2 = simplify( ddtpKEpq_2d - pKEpq_2 + pPEpq_2)==0; 
 qSol = isolate(eqq_2,q_2dd);
