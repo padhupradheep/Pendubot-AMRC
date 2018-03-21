@@ -87,12 +87,30 @@ syms kd kp q_1ddr q_1dr q_1r %A PD control is being introduced in order for the 
 
 %In order to track, we setup a reference trajectory! 
 v_1 = q_1ddr+kd*(q_1dr-q_1d) + kp*(q_1r - q_1);
-tau_1 = simplify( ddtpKEpq_1d - pKEpq_1 + pPEpq_1);
+tau_1 = simplify( ddtpKEpq_1d - pKEpq_1 + pPEpq_1-p_q_1)==0;
+tau_2 = simplify( ddtpKEpq_2d - pKEpq_2 + pPEpq_2 - p_q_2)==0;
+
+%For the state space equation
+q_1dds = isolate(tau_1,q_1dd);
+q_2dds = isolate(tau_1,q_2dd);
+q_1dds01 = isolate(tau_2,q_1dd);
+q_2dds01 = isolate(tau_2,q_2dd);
+%Hard coding the expression for state space transformation
+q_2ddss1 = (l_1^2*m1*q_1dd*sin(2*q_1) - l_1^2*m2*q_1dd - l_2^2*m2*q_1dd - g*l_2*m2*cos(q_1 + q_2) - l_1^2*m1*q_1dd + l_1^2*m2*q_1dd*sin(2*q_1) - g*l_1*m1*cos(q_1) - g*l_1*m2*cos(q_1) + l_2^2*m2*q_1dd*sin(2*q_1 + 2*q_2) + l_1^2*m1*q_1d^2*cos(2*q_1) + l_1^2*m2*q_1d^2*cos(2*q_1) + l_2^2*m2*q_1d^2*cos(2*q_1 + 2*q_2) + l_2^2*m2*q_2d^2*cos(2*q_1 + 2*q_2) + 2*l_1*l_2*m2*q_1dd*sin(2*q_1 + q_2) + l_1*l_2*m2*q_2d^2*sin(q_2) + 2*l_1*l_2*m2*q_1d^2*cos(2*q_1 + q_2) + l_1*l_2*m2*q_2d^2*cos(2*q_1 + q_2) + 2*l_2^2*m2*q_1d*q_2d*cos(2*q_1 + 2*q_2) - 2*l_1*l_2*m2*q_1dd*cos(q_2) + 2*l_1*l_2*m2*q_1d*q_2d*sin(q_2) + 2*l_1*l_2*m2*q_1d*q_2d*cos(2*q_1 + q_2))/(l_2^2*m2 - l_2^2*m2*sin(2*q_1 + 2*q_2) + l_1*l_2*m2*cos(q_2) - l_1*l_2*m2*sin(2*q_1 + q_2));
+q_1ddss1 = (l_2^2*m2*q_2dd*sin(2*q_1 + 2*q_2) - g*l_2*m2*cos(q_1 + q_2) - g*l_1*m1*cos(q_1) - g*l_1*m2*cos(q_1) - l_2^2*m2*q_2dd + l_1^2*m1*q_1d^2*cos(2*q_1) + l_1^2*m2*q_1d^2*cos(2*q_1) + l_2^2*m2*q_1d^2*cos(2*q_1 + 2*q_2) + l_2^2*m2*q_2d^2*cos(2*q_1 + 2*q_2) + l_1*l_2*m2*q_2dd*sin(2*q_1 + q_2) + l_1*l_2*m2*q_2d^2*sin(q_2) + 2*l_1*l_2*m2*q_1d^2*cos(2*q_1 + q_2) + l_1*l_2*m2*q_2d^2*cos(2*q_1 + q_2) + 2*l_2^2*m2*q_1d*q_2d*cos(2*q_1 + 2*q_2) - l_1*l_2*m2*q_2dd*cos(q_2) + 2*l_1*l_2*m2*q_1d*q_2d*sin(q_2) + 2*l_1*l_2*m2*q_1d*q_2d*cos(2*q_1 + q_2))/(l_1^2*m1 + l_1^2*m2 + l_2^2*m2 - l_2^2*m2*sin(2*q_1 + 2*q_2) - l_1^2*m1*sin(2*q_1) - l_1^2*m2*sin(2*q_1) + 2*l_1*l_2*m2*cos(q_2) - 2*l_1*l_2*m2*sin(2*q_1 + q_2));
+%Tau_2 should be zero 
+q_1ddss21 = (l_2*cos(q_1 + q_2) + l_1*cos(q_1) - l_2^2*m2*q_2dd - g*l_2*m2*cos(q_1 + q_2) + l_2^2*m2*q_2dd*sin(2*q_1 + 2*q_2) + l_2^2*m2*q_1d^2*cos(2*q_1 + 2*q_2) + l_2^2*m2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*l_2*m2*q_1d^2*sin(q_2) + l_1*l_2*m2*q_1d^2*cos(2*q_1 + q_2) + 2*l_2^2*m2*q_1d*q_2d*cos(2*q_1 + 2*q_2))/(l_2^2*m2 - l_2^2*m2*sin(2*q_1 + 2*q_2) + l_1*l_2*m2*cos(q_2) - l_1*l_2*m2*sin(2*q_1 + q_2));
+q_2ddss21 = (l_2*cos(q_1 + q_2) + l_1*cos(q_1) - l_2^2*m2*q_1dd - g*l_2*m2*cos(q_1 + q_2) + l_2^2*m2*q_1dd*sin(2*q_1 + 2*q_2) + l_2^2*m2*q_1d^2*cos(2*q_1 + 2*q_2) + l_2^2*m2*q_2d^2*cos(2*q_1 + 2*q_2) + l_1*l_2*m2*q_1dd*sin(2*q_1 + q_2) - l_1*l_2*m2*q_1d^2*sin(q_2) + l_1*l_2*m2*q_1d^2*cos(2*q_1 + q_2) + 2*l_2^2*m2*q_1d*q_2d*cos(2*q_1 + 2*q_2) - l_1*l_2*m2*q_1dd*cos(q_2))/(l_2^2*m2 - l_2^2*m2*sin(2*q_1 + 2*q_2));
+q_1ddss2 = subs(q_1ddss21,tau_2,0);
+q_2ddss2 = subs(q_2ddss21,tau_2,0);
+
+%Continuing the model
 eqq_2 = simplify( ddtpKEpq_2d - pKEpq_2 + pPEpq_2)==0; 
 qSol = isolate(eqq_2,q_2dd);
 q_2dd1 = subs(eqq_2, lhs(qSol), rhs(qSol));
 q_2dd2 = -l_2*m2*(l_2*q_1d^2*cos(2*q_1 + 2*q_2) - g*cos(q_1 + q_2) - l_2*q_1dd + l_2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*q_1dd*cos(q_2) + l_1*q_1dd*sin(2*q_1 + q_2) - l_1*q_1d^2*sin(q_2) - (l_2*(l_2*q_1d^2*cos(2*q_1 + 2*q_2) - g*cos(q_1 + q_2) - l_2*q_1dd + l_2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*q_1dd*cos(q_2) + l_1*q_1dd*sin(2*q_1 + q_2) - l_1*q_1d^2*sin(q_2) + l_1*q_1d^2*cos(2*q_1 + q_2) + l_2*q_1dd*sin(2*q_1 + 2*q_2) + 2*l_2*q_1d*q_2d*cos(2*q_1 + 2*q_2)))/(l_2 - l_2*sin(2*q_1 + 2*q_2)) + l_1*q_1d^2*cos(2*q_1 + q_2) + l_2*q_1dd*sin(2*q_1 + 2*q_2) + (l_2*sin(2*q_1 + 2*q_2)*(l_2*q_1d^2*cos(2*q_1 + 2*q_2) - g*cos(q_1 + q_2) - l_2*q_1dd + l_2*q_2d^2*cos(2*q_1 + 2*q_2) - l_1*q_1dd*cos(q_2) + l_1*q_1dd*sin(2*q_1 + q_2) - l_1*q_1d^2*sin(q_2) + l_1*q_1d^2*cos(2*q_1 + q_2) + l_2*q_1dd*sin(2*q_1 + 2*q_2) + 2*l_2*q_1d*q_2d*cos(2*q_1 + 2*q_2)))/(l_2 - l_2*sin(2*q_1 + 2*q_2)) + 2*l_2*q_1d*q_2d*cos(2*q_1 + 2*q_2));
 tau_1 = subs(tau_1,q_2dd,q_2dd2);
+
 tau_1 = subs(tau_1,q_1dd,v_1)
 matlabFunction(tau_1, 'file', 'ControlTorque1');
 %Internal dynamics of the system and their stability
